@@ -1,0 +1,10 @@
+/node_modules/
+/.classpath
+/.project
+/.serverless
+/.settings
+/bin
+.DS_Store
+/dist
+/setup/node_modules
+/envfile*
