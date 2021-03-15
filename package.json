@@ -1,6 +1,6 @@
 {
   "name": "triva-datapublishagent",
-  "version": "1.0.0",
+  "version": "0.1.0",
   "description": "Data publishing agent to create and maintain replicas of TRIVA application data",
   "main": "dist/TrivaDataPublishAgent.js",
   "scripts": {
@@ -19,7 +19,7 @@
   "homepage": "https://github.com/Triva-Elevate/triva-datapublishagent#readme",
   "devDependencies": {
     "@types/command-line-args": "^5.0.0",
-    "@types/node": "^14.14.31",
+    "@types/node": "^14.14.34",
     "@types/node-fetch": "^2.5.8",
     "@types/pg": "^7.14.11",
     "ts-node": "^9.1.1",

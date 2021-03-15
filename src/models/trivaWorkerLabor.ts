@@ -1,6 +1,6 @@
 'use strict';
 
-import { UpdateList, LaborAttribVals } from "./common";
+import { UpdateList, LaborAttribVals, ISOTimeStamp, ISODate } from "./common";
 
 // These models match the API definition for the Worker Labor Data Sync API -  https://apigw-prod.api.triva.xyz/DataPublish/docs/#/Worker_Labor_Data_Sync
 
@@ -9,20 +9,20 @@ interface WorkerLaborUpdate {
     projectID: string,
     teamCompanyID: string,
     userID: string,
-    startTS: string,    // ISODateTime
-    endTS?: string,  // ISODateTime
-    closedTS?: string,  // ISODateTime
-    projectDate?: string,    // ISODate
+    startTS: ISOTimeStamp,    // ISODateTime
+    endTS?: ISOTimeStamp,  // ISODateTime
+    closedTS?: ISOTimeStamp,  // ISODateTime
+    projectDate?: ISODate,    // ISODate
     laborValues?: LaborAttribVals[],
-    lastEditTS?: string,  // ISODateTime
+    lastEditTS?: ISOTimeStamp,  // ISODateTime
     lastEditUserID?: string,
     lastEditNotes?: string,
     checkInUserID?: string,
     checkOutUserID?: string,
-    checkInTS?: string,  // ISODateTime
-    checkOutTS?: string,  // ISODateTime
+    checkInTS?: ISOTimeStamp,  // ISODateTime
+    checkOutTS?: ISOTimeStamp,  // ISODateTime
     verifiedUserID?: string,
-    verifiedTS?: string,  // ISODateTime
+    verifiedTS?: ISOTimeStamp,  // ISODateTime
     checkInStatus?: string
     deleted?: boolean,
     version: number

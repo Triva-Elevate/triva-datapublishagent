@@ -13,6 +13,8 @@ import { doWorkerDetectionsSync } from '../api/trivaWorkerDetectionsDataSync';
 import { doWorkerLaborSync } from '../api/trivaWorkerLaborDataSync';
 import { doStationSync } from '../api/trivaStationDataSync';
 import moment from 'moment-timezone';
+import { doWeatherConditionSync } from '../api/trivaWeatherConditionsDataSync';
+import { doWeatherAlertsSync } from '../api/trivaWeatherAlertsDataSync';
 
 interface UpdateOptions extends CoreOptions {
     trivauserid: string,
@@ -90,6 +92,8 @@ async function dpaUpdate(opts: UpdateOptions): Promise<void> {
                 await doWorkersOnTeamSync(dbConnect, clientID, projectID);
                 await doWorkerDetectionsSync(dbConnect, clientID, projectID);
                 await doWorkerLaborSync(dbConnect, clientID, projectID);
+                await doWeatherConditionSync(dbConnect, clientID, projectID);
+                await doWeatherAlertsSync(dbConnect, clientID, projectID);
             }
         }
         if (opts.repeat > 0) {
@@ -114,4 +118,3 @@ export function handleUpdateCommand(args: string[]) {
         .then(() => { TDPALog(`Update completed`); })
         .catch(err => { TDPALog(`ERROR during update: ${err}`); process.exit(1); });
 }
-

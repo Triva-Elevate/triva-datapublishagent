@@ -5,6 +5,8 @@ import { ClientUpdateList } from '../models/trivaClient';
 import { ProjectUpdateList } from '../models/trivaProject';
 import { StationUpdateList } from '../models/trivaStation';
 import { TeamUpdateList } from '../models/trivaTeam';
+import { WeatherAlertsUpdateList } from '../models/trivaWeatherAlerts';
+import { WeatherConditionsUpdateList } from '../models/trivaWeatherCondition';
 import { WorkerUpdateList } from '../models/trivaWorker';
 import { LocationDetectionRange, WorkerDetectionUpdateList } from '../models/trivaWorkerDetection';
 import { WorkerLaborUpdateList } from '../models/trivaWorkerLabor';
@@ -30,6 +32,8 @@ const DBWorkerOnTeamAssignedTimesTable = "triva_workers_on_team_assigned_times";
 const DBWorkerDetectionTable = "triva_worker_detections";
 const DBWorkerLaborTable = "triva_worker_labor";
 const DBStationTable = "triva_stations";
+const DBWeatherConditionTable = "triva_weather_conditions";
+const DBWeatherAlertTable = "triva_weather_alerts";
 
 const TABLE_EXISTS_SQL = "select exists(SELECT * FROM information_schema.tables WHERE table_schema = 'public' AND table_name = $1)";
 const GET_VERSION_SQL = `select version from ${DBVersionTable} where schema='base'`;
@@ -69,7 +73,17 @@ const DELETE_WORKERLABOR_SQL = `DELETE FROM ${DBWorkerLaborTable} WHERE clientid
 const UPSERT_WORKERLABOR_SQL = `INSERT INTO ${DBWorkerLaborTable} (clientid, projectid, teamcompanyid, userid, startts, endts, projectdate, laborvalues, closedts, lasteditts, lastedituserid, lasteditnotes, checkints, checkinuserid, checkoutts, checkoutuserid, verifiedts, verifieduserid, checkinstatus) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19) ON CONFLICT (clientid, projectid, teamcompanyid, userid, startts) DO UPDATE SET endts=$6, projectdate=$7, laborvalues=$8, closedts=$9, lasteditts=$10, lastedituserid=$11, lasteditnotes=$12, checkints=$13, checkinuserid=$14, checkoutts=$15, checkoutuserid=$16, verifiedts=$17, verifieduserid=$18, checkinstatus=$19`;
 const DELETE_STATION_SQL = `DELETE FROM ${DBStationTable} WHERE clientid=$1 and projectid=$2 and stationid=$3`;
 const UPSERT_STATION_SQL = `INSERT INTO ${DBStationTable} (clientid, projectid, stationid, stationname, isactive, stationsensorid, aliasstationid, minssi, gatewayid, latitude, longitude, isoffsite, ssigainoffset, loitertimelimit, isonline) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15) ON CONFLICT (clientid, projectid, stationid) DO UPDATE SET stationname=$4, isactive=$5, stationsensorid=$6, aliasstationid=$7, minssi=$8, gatewayid=$9, latitude=$10, longitude=$11, isoffsite=$12, ssigainoffset=$13, loitertimelimit=$14, isonline=$15`;
-
+const DELETE_WEATHERCOND_SQL = `DELETE FROM ${DBWeatherConditionTable} WHERE clientid=$1 and projectid=$2 and conditiontime=$3`;
+const UPSERT_WEATHERCOND_SQL = `INSERT INTO ${DBWeatherConditionTable} (clientid, projectid, conditiontime, actualtime, temp, feelslike, dewpoint, humidity, precip, snowdepth, pressure, winddir, wind, windspeed, windgust, sky, clouds, weather, weatherprimary, icon, iconurl, bigiconurl, visibility, uvindex, solarrad, ceiling, isday)
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27)
+    ON CONFLICT (clientid, projectid, conditiontime) 
+    DO UPDATE SET actualtime=$4, temp=$5, feelslike=$6, dewpoint=$7, humidity=$8, precip=$9, snowdepth=$10, pressure=$11, winddir=$12, wind=$13, windspeed=$14, windgust=$15, sky=$16, clouds=$17, weather=$18, weatherprimary=$19, icon=$20, iconurl=$21, bigiconurl=$22, visibility=$23, uvindex=$24, solarrad=$25, ceiling=$26, isday=$27`;
+const DELETE_WEATHERALERT_SQL = `DELETE FROM ${DBWeatherAlertTable} WHERE clientid=$1 and projectid=$2 and id=$3`;
+const UPSERT_WEATHERALERT_SQL = `INSERT INTO ${DBWeatherAlertTable} (clientid, projectid, id, areadesc, sentts, effectivets, onsetts, expirests, endsts, severity, certainty, urgency, event, sendername, headline, description, instruction, response, polygon, geocodelist, replacedby, replacedts, lastactivets, isactive)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24)
+        ON CONFLICT (clientid, projectid, id) 
+        DO UPDATE SET areadesc=$4, sentts=$5, effectivets=$6, onsetts=$7, expirests=$8, endsts=$9, severity=$10, certainty=$11, urgency=$12, event=$13, sendername=$14, headline=$15, description=$16, instruction=$17, response=$18, polygon=$19, geocodelist=$20, replacedby=$21, replacedts=$22, lastactivets=$23, isactive=$24`;
+    
 interface PGDBSession extends DBSession {
     session: PGSessionInfo
 }
@@ -147,6 +161,27 @@ const dbVersions: DBSteps[] = [
                 sql: `CREATE TABLE ${DBStationTable} (clientid TEXT, projectid TEXT, stationid TEXT, stationname TEXT, isactive BOOLEAN, stationsensorid TEXT, aliasstationid TEXT, minssi INTEGER, gatewayid TEXT, latitude FLOAT, longitude FLOAT, isoffsite BOOLEAN, ssigainoffset INTEGER, loitertimelimit INTEGER, isonline BOOLEAN, PRIMARY KEY (clientid, projectid, stationid))`
             },
         ]
+    },
+    {
+        steps: [
+            {
+                name: `Create ${DBWeatherConditionTable} table`,
+                sql: `CREATE TABLE ${DBWeatherConditionTable} (clientid TEXT, projectid TEXT, conditiontime timestamptz, 
+                    actualtime timestamptz, temp float, feelslike float, dewpoint float, humidity float, precip float, 
+                    snowdepth float, pressure float, winddir float, wind text, windspeed float, windgust float, 
+                    sky float, clouds text, weather text, weatherprimary text, icon text, iconurl text, 
+                    bigiconurl text, visibility float, uvindex float, solarrad float, ceiling float, isday boolean, 
+                    closeststationid text, PRIMARY KEY (clientid, projectid, conditiontime))`
+            },
+            {
+                name: `Create ${DBWeatherAlertTable} table`,
+                sql: `CREATE TABLE ${DBWeatherAlertTable} (clientid TEXT, projectid TEXT, id TEXT, areadesc TEXT, sentts timestamptz, 
+                    effectivets timestamptz, onsetts timestamptz, expirests timestamptz, endsts timestamptz,
+                    severity text, certainty text, urgency text, event text, sendername text, headline text, description text, instruction text, 
+                    response text, polygon text[], geocodelist text[], replacedby text, replacedts timestamptz, lastactivets timestamptz, 
+                    isactive boolean, PRIMARY KEY (clientid, projectid, id))`            
+            }
+        ]
     }
 ];
 
@@ -193,6 +228,8 @@ async function connectDB(host: string, port: number, dbName: string, userID: str
         dbUpdateWorkerDetections: (clientID, projectID, updates): Promise<void> => { return doUpdateWorkerDetections(session, clientID, projectID, updates); },
         dbUpdateWorkerLabor: (clientID, projectID, updates): Promise<void> => { return doUpdateWorkerLabor(session, clientID, projectID, updates); },
         dbUpdateStations: (clientID, projectID, updates): Promise<void> => { return doUpdateStations(session, clientID, projectID, updates); },
+        dbUpdateWeatherConditions: (clientID, projectID, updates): Promise<void> => { return doUpdateWeatherConditions(session, clientID, projectID, updates); },
+        dbUpdateWeatherAlerts: (clientID, projectID, updates): Promise<void> => { return doUpdateWeatherAlerts(session, clientID, projectID, updates); },
     };
 }
 
@@ -328,6 +365,16 @@ const DOW = [ "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat" ];
 
 function toTime(n: number): string {
     return `${Math.floor(n/3600)}:${Math.floor((n / 60) % 60)}:${Math.floor(n % 60)}`;
+}
+
+function toNumber(v: number): number {
+    if (typeof v === 'number') return v;
+    return null;
+}
+
+function toDate(v: string): Date {
+    if (typeof v === 'string') return new Date(v);
+    return null;
 }
 
 async function doUpdateProjects(sess: PGSessionInfo, clientID: string, updates: ProjectUpdateList): Promise<void> {
@@ -530,8 +577,8 @@ async function doUpdateWorkersOnProject(sess: PGSessionInfo, clientID: string, p
                             upd.clientID || clientID,
                             upd.projectID || projectID,
                             upd.userID,
-                            at.startTS,
-                            at.endTS || null
+                            toDate(at.startTS),
+                            toDate(at.endTS)
                         ];
                         await sess.pool.query(UPSERT_WORKERONPROJECTASSIGNEDTIMES_SQL, atargs);
         
@@ -576,8 +623,8 @@ async function doUpdateWorkersOnTeam(sess: PGSessionInfo, clientID: string, proj
                             upd.projectID || projectID,
                             upd.userID,
                             upd.teamCompanyID || "",
-                            at.startTS,
-                            at.endTS || null
+                            toDate(at.startTS),
+                            toDate(at.endTS)
                         ];
                         await sess.pool.query(UPSERT_WORKERONTEAMASSIGNEDTIMES_SQL, atargs);
                     }
@@ -617,7 +664,7 @@ async function doUpdateWorkerDetections(sess: PGSessionInfo, clientID: string, p
         // Apply updates in order
         for (let upd of updates.workerDetectionUpdates) {
             if (upd.deleted) {  // Deleted record and subrecords
-                await sess.pool.query(DELETE_WORKERDETECTION_SQL, [ upd.clientID, upd.projectID, upd.teamCompanyID, upd.userID, upd.startTS ]);
+                await sess.pool.query(DELETE_WORKERDETECTION_SQL, [ upd.clientID, upd.projectID, upd.teamCompanyID, upd.userID, toDate(upd.startTS) ]);
             }
             else {
                 let args = [
@@ -625,12 +672,12 @@ async function doUpdateWorkerDetections(sess: PGSessionInfo, clientID: string, p
                     upd.projectID || projectID,
                     upd.teamCompanyID || "",
                     upd.userID,
-                    upd.startTS,
-                    upd.endTS || null,
+                    toDate(upd.startTS),
+                    toDate(upd.endTS),
                     upd.projectDate,
                     formatLaborAttribValues(upd.laborValues),
                     upd.lastLocationID || null,
-                    upd.lastLocationTS || null,
+                    toDate(upd.lastLocationTS),
                     formatLocationRanges(upd.ranges)
                 ];
                 await sess.pool.query(UPSERT_WORKERDETECTION_SQL, args);
@@ -653,7 +700,7 @@ async function doUpdateWorkerLabor(sess: PGSessionInfo, clientID: string, projec
         // Apply updates in order
         for (let upd of updates.workerLaborUpdates) {
             if (upd.deleted) {  // Deleted record and subrecords
-                await sess.pool.query(DELETE_WORKERLABOR_SQL, [ upd.clientID, upd.projectID, upd.teamCompanyID, upd.userID, upd.startTS ]);
+                await sess.pool.query(DELETE_WORKERLABOR_SQL, [ upd.clientID, upd.projectID, upd.teamCompanyID, upd.userID, toDate(upd.startTS) ]);
             }
             else {
                 let args = [
@@ -661,19 +708,19 @@ async function doUpdateWorkerLabor(sess: PGSessionInfo, clientID: string, projec
                     upd.projectID || projectID,
                     upd.teamCompanyID || "",
                     upd.userID,
-                    upd.startTS,
-                    upd.endTS || null,
+                    toDate(upd.startTS),
+                    toDate(upd.endTS),
                     upd.projectDate,
                     formatLaborAttribValues(upd.laborValues),
-                    upd.closedTS || null,
-                    upd.lastEditTS || null,
+                    toDate(upd.closedTS),
+                    toDate(upd.lastEditTS),
                     upd.lastEditUserID || null,
                     upd.lastEditNotes || null,
-                    upd.checkInTS || null,
+                    toDate(upd.checkInTS),
                     upd.checkInUserID || null,
-                    upd.checkOutTS || null,
+                    toDate(upd.checkOutTS),
                     upd.checkOutUserID || null,
-                    upd.verifiedTS || null,
+                    toDate(upd.verifiedTS),
                     upd.verifiedUserID || null,
                     upd.checkInStatus || null
                 ];
@@ -708,13 +755,13 @@ async function doUpdateStations(sess: PGSessionInfo, clientID: string, projectID
                     upd.isActive || false,
                     upd.stationSensorID || null,
                     upd.aliasStationID || null,
-                    (typeof upd.minSSI == "number") ? upd.minSSI : null,
+                    toNumber(upd.minSSI),
                     upd.gatewayID || null,
-                    (typeof upd.latitude == 'number') ? upd.latitude : null,
-                    (typeof upd.longitude == 'number') ? upd.longitude : null,
+                    toNumber(upd.latitude),
+                    toNumber(upd.longitude),
                     upd.isOffSite || false,
-                    (typeof upd.ssiGainOffset == 'number') ? upd.ssiGainOffset : null,
-                    (typeof upd.loiterLimits?.timeLimit == 'number') ? upd.loiterLimits.timeLimit : null,
+                    toNumber(upd.ssiGainOffset),
+                    toNumber(upd.loiterLimits?.timeLimit),
                     upd.isOnline || false
                 ];
                 await sess.pool.query(UPSERT_STATION_SQL, args);
@@ -723,6 +770,108 @@ async function doUpdateStations(sess: PGSessionInfo, clientID: string, projectID
         await c.query("COMMIT")
     } catch (err) {
         TDPALog(`ERROR during SQL station update: ${err}`);
+        await c.query("ROLLBACK");
+        throw err;
+    } finally {
+        await c.release();
+    }
+}
+
+async function doUpdateWeatherConditions(sess: PGSessionInfo, clientID: string, projectID: string, updates: WeatherConditionsUpdateList): Promise<void> {
+    let c = await sess.pool.connect(); // Get a connection, so we do this as transaction
+    try {
+        await c.query("BEGIN");         // Start transaction for update
+        // Apply updates in order
+        for (let upd of updates.weatherConditionsUpdates) {
+            if (upd.deleted) {  // Deleted record and subrecords
+                await sess.pool.query(DELETE_WEATHERCOND_SQL, [ upd.clientID, upd.projectID, 
+                    toDate(upd.conditionTime) ]);
+            }
+            else {
+                let args = [
+                    upd.clientID || clientID,
+                    upd.projectID || projectID,
+                    toDate(upd.conditionTime),
+                    toDate(upd.actualTime),
+                    toNumber(upd.tempF),
+                    toNumber(upd.feelsLikeF),
+                    toNumber(upd.dewPointF),
+                    toNumber(upd.humidityPct),
+                    toNumber(upd.precipInches),
+                    toNumber(upd.snowDepthInches),
+                    toNumber(upd.precipInches),
+                    toNumber(upd.windDirDeg),
+                    upd.windDir || null,
+                    toNumber(upd.windSpeedMPH),
+                    toNumber(upd.windGustMPH),
+                    toNumber(upd.skyPercent),
+                    upd.cloudsCoded || null,
+                    upd.weather || null,
+                    upd.weatherPrimaryCoded || null,
+                    upd.icon || null,
+                    upd.iconURL || null,
+                    upd.bigIconURL || null,
+                    toNumber(upd.visibilityMiles),
+                    toNumber(upd.uVIndex),
+                    toNumber(upd.solarRadiationWM2),
+                    toNumber(upd.ceilingFt),
+                    upd.isDay || false
+                ];
+                await sess.pool.query(UPSERT_WEATHERCOND_SQL, args);
+            }
+        }
+        await c.query("COMMIT")
+    } catch (err) {
+        TDPALog(`ERROR during SQL weather conditions update: ${err}`);
+        await c.query("ROLLBACK");
+        throw err;
+    } finally {
+        await c.release();
+    }
+}
+
+async function doUpdateWeatherAlerts(sess: PGSessionInfo, clientID: string, projectID: string, updates: WeatherAlertsUpdateList): Promise<void> {
+    let c = await sess.pool.connect(); // Get a connection, so we do this as transaction
+    try {
+        await c.query("BEGIN");         // Start transaction for update
+        // Apply updates in order
+        for (let upd of updates.weatherAlertsUpdates) {
+            if (upd.deleted) {  // Deleted record and subrecords
+                await sess.pool.query(DELETE_WEATHERALERT_SQL, [ upd.clientID, upd.projectID, upd.id ]);
+            }
+            else {
+                let args = [
+                    upd.clientID || clientID,
+                    upd.projectID || projectID,
+                    upd.id,
+                    upd.areaDesc || null,
+                    toDate(upd.sentTS),
+                    toDate(upd.effectiveTS),
+                    toDate(upd.onsetTS),
+                    toDate(upd.expiresTS),
+                    toDate(upd.endsTS),
+                    upd.severity || null,
+                    upd.certainty || null,
+                    upd.urgency || null,
+                    upd.event || null,
+                    upd.senderName || null,
+                    upd.headline || null,
+                    upd.description || null,
+                    upd.instruction || null,
+                    upd.response || null,
+                    upd.polygon ? upd.polygon.map(v => JSON.stringify(v)) : null,
+                    upd.geocodeUGSList || null,
+                    upd.replacedBy || null,
+                    toDate(upd.replacedTS),
+                    toDate(upd.lastActiveTS),
+                    upd.isActive || false                
+                ];
+                await sess.pool.query(UPSERT_WEATHERALERT_SQL, args);
+            }
+        }
+        await c.query("COMMIT")
+    } catch (err) {
+        TDPALog(`ERROR during SQL weather alerts update: ${err}`);
         await c.query("ROLLBACK");
         throw err;
     } finally {

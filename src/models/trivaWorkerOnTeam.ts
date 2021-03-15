@@ -1,11 +1,11 @@
 'use strict';
 
-import { UpdateList } from "./common";
+import { UpdateList, ISOTimeStamp } from "./common";
 
 // These models match the API definition for the Worker-On-Team Data Sync API -  https://apigw-prod.api.triva.xyz/DataPublish/docs/#/Worker-On-Team_Data_Sync
 interface AssignedTimeRange {
-    startTS: string,    // ISODsteTIme
-    endTS?: string      // ISODateTime
+    startTS: ISOTimeStamp,    // ISODsteTIme
+    endTS?: ISOTimeStamp      // ISODateTime
 };
 
 interface WorkerOnTeamUpdate {

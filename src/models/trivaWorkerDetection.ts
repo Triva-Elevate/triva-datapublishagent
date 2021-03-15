@@ -1,11 +1,11 @@
 'use strict';
 
-import { UpdateList, LaborAttribVals } from "./common";
+import { UpdateList, LaborAttribVals, ISOTimeStamp, ISODate } from "./common";
 
 // These models match the API definition for the Worker Detection Data Sync API -  https://apigw-prod.api.triva.xyz/DataPublish/docs/#/Worker_Detections_Data_Sync
 interface DetectedTimeRange {
-    startTS: string,    // ISODsteTIme
-    endTS?: string      // ISODateTime
+    startTS: ISOTimeStamp,    // ISODsteTIme
+    endTS?: ISOTimeStamp      // ISODateTime
 };
 
 export interface LocationDetectionRange {
@@ -18,19 +18,17 @@ interface WorkerDetectionUpdate {
     projectID: string,
     teamCompanyID: string,
     userID: string,
-    startTS: string,    // ISODateTime
-    endTS?: string,  // ISODateTime
-    projectDate?: string,    // ISODate
+    startTS: ISOTimeStamp,    // ISODateTime
+    endTS?: ISOTimeStamp,  // ISODateTime
+    projectDate?: ISODate,    // ISODate
     laborValues?: LaborAttribVals[],
     lastLocationID?: string,   // ID of last location (if detected or checked in onsite)
-    lastLocationTS?: string,   // ISODateTIme
+    lastLocationTS?: ISOTimeStamp,   // ISODateTIme
     ranges?: LocationDetectionRange[]
     deleted?: boolean,
     version: number
 };
 
 export interface WorkerDetectionUpdateList extends UpdateList {
-    moreUpdates: boolean,
-    finalVersion?: number,
     workerDetectionUpdates: WorkerDetectionUpdate[]
 };

@@ -4,6 +4,8 @@ import { ClientUpdateList } from "../models/trivaClient";
 import { ProjectUpdateList } from "../models/trivaProject";
 import { StationUpdateList } from "../models/trivaStation";
 import { TeamUpdateList } from "../models/trivaTeam";
+import { WeatherAlertsUpdateList } from "../models/trivaWeatherAlerts";
+import { WeatherConditionsUpdateList } from "../models/trivaWeatherCondition";
 import { WorkerUpdateList } from "../models/trivaWorker";
 import { WorkerDetectionUpdateList } from "../models/trivaWorkerDetection";
 import { WorkerLaborUpdateList } from "../models/trivaWorkerLabor";
@@ -52,6 +54,10 @@ export interface DBSession {
     dbUpdateWorkerLabor?: (clientID: string, projectID: string, updates: WorkerLaborUpdateList) => Promise<void>,
     // Deliver StationUpdateList to database
     dbUpdateStations?: (clientID: string, projectID: string, updates: StationUpdateList) => Promise<void>,
+    // Deliver WeatherConditionsUpdateList to database
+    dbUpdateWeatherConditions?: (clientID: string, projectID: string, updates: WeatherConditionsUpdateList) => Promise<void>,
+    // Deliver WeatherAlertsUpdateList to database
+    dbUpdateWeatherAlerts?: (clientID: string, projectID: string, updates: WeatherAlertsUpdateList) => Promise<void>,
 };
 
 export interface DBDriverList {
