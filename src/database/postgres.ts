@@ -68,7 +68,7 @@ const UPSERT_WORKERONTEAM_SQL = `INSERT INTO ${DBWorkerOnTeamTable} (clientid, p
 const DELETE_WORKERONTEAMASSIGNEDTIMES_SQL = `DELETE FROM ${DBWorkerOnTeamAssignedTimesTable} WHERE clientid=$1 and projectid=$2 and userid=$3 and teamcompanyid=$4`;
 const UPSERT_WORKERONTEAMASSIGNEDTIMES_SQL = `INSERT INTO ${DBWorkerOnTeamAssignedTimesTable} (clientid, projectid, userid, teamcompanyid, startts, endts) VALUES ($1, $2, $3, $4, $5, $6) ON CONFLICT (clientid, projectid, userid, teamcompanyid, startts) DO UPDATE SET endts=$6`;
 const DELETE_WORKERDETECTION_SQL = `DELETE FROM ${DBWorkerDetectionTable} WHERE clientid=$1 and projectid=$2 and teamcompanyid=$3 and userid=$4 and startts=$5`;
-const UPSERT_WORKERDETECTION_SQL = `INSERT INTO ${DBWorkerDetectionTable} (clientid, projectid, teamcompanyid, userid, startts, endts, projectdate, laborvalues, lastlocationid, lastlocationts, locatopmramges) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) ON CONFLICT (clientid, projectid, teamcompanyid, userid, startts) DO UPDATE SET endts=$6, projectdate=$7, laborvalues=$8, lastlocationid=$9, lastlocationts=$10, locatopmramges=$11`;
+const UPSERT_WORKERDETECTION_SQL = `INSERT INTO ${DBWorkerDetectionTable} (clientid, projectid, teamcompanyid, userid, startts, endts, projectdate, laborvalues, lastlocationid, lastlocationts, locationranges) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) ON CONFLICT (clientid, projectid, teamcompanyid, userid, startts) DO UPDATE SET endts=$6, projectdate=$7, laborvalues=$8, lastlocationid=$9, lastlocationts=$10, locationranges=$11`;
 const DELETE_WORKERLABOR_SQL = `DELETE FROM ${DBWorkerLaborTable} WHERE clientid=$1 and projectid=$2 and teamcompanyid=$3 and userid=$4 and startts=$5`;
 const UPSERT_WORKERLABOR_SQL = `INSERT INTO ${DBWorkerLaborTable} (clientid, projectid, teamcompanyid, userid, startts, endts, projectdate, laborvalues, closedts, lasteditts, lastedituserid, lasteditnotes, checkints, checkinuserid, checkoutts, checkoutuserid, verifiedts, verifieduserid, checkinstatus) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19) ON CONFLICT (clientid, projectid, teamcompanyid, userid, startts) DO UPDATE SET endts=$6, projectdate=$7, laborvalues=$8, closedts=$9, lasteditts=$10, lastedituserid=$11, lasteditnotes=$12, checkints=$13, checkinuserid=$14, checkoutts=$15, checkoutuserid=$16, verifiedts=$17, verifieduserid=$18, checkinstatus=$19`;
 const DELETE_STATION_SQL = `DELETE FROM ${DBStationTable} WHERE clientid=$1 and projectid=$2 and stationid=$3`;
@@ -181,6 +181,18 @@ const dbVersions: DBSteps[] = [
                     response text, polygon text[], geocodelist text[], replacedby text, replacedts timestamptz, lastactivets timestamptz, 
                     isactive boolean, PRIMARY KEY (clientid, projectid, id))`            
             }
+        ]
+    },
+    {
+        steps: [
+            {
+                name: `Remove locatopnranges from ${DBWorkerDetectionTable}`,
+                sql: `ALTER TABLE ${DBWorkerDetectionTable} DROP COLUMN locatopmramges`
+            },
+            {
+                name: `Add locationranges from ${DBWorkerDetectionTable}`,
+                sql: `ALTER TABLE ${DBWorkerDetectionTable} ADD COLUMN locationranges JSONB`
+            },
         ]
     }
 ];

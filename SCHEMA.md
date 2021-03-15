@@ -181,6 +181,7 @@ Each worker assigned to a project will be a member of one team at a given time, 
    Column   | Type | Is Key? | Description |
  --------------- | ------- | ------- | --------------------
  clientid        | text    | Yes     | Unique ID of the client
+ projectid       | text    | Yes     | ID of the project
  teamcompanyid   | text    | Yes     | ID of the company of the assigned team
  userid          | text    | Yes     | ID of the worker assigned to the team
  startts         | timestamp with time zone | Yes | Timestamp when worker was assigned to the team
@@ -188,11 +189,117 @@ Each worker assigned to a project will be a member of one team at a given time, 
 
 ### triva_worker_labor
 
+Any labor data recorded for a worker while assigned to a team on a project will be recorded here.  Any given labor record will
+be particular to a given date on the project, and a worker can have zero or more records for a given date.
+
+   Column   | Type | Is Key? | Description |
+ --------------- | ------- | ------- | --------------------
+ clientid       | text                     | Yes     | Unique ID of the client
+ projectid      | text                     | Yes     | ID of the project
+ teamcompanyid  | text                     | Yes     | ID of the company of the assigned team
+ userid         | text                     | Yes     | ID of the worker
+ startts        | timestamp with time zone | Yes     | Timestamp of the start of the record labor time
+ endts          | timestamp with time zone | No      | Current ending time for the worker labor record (this can change for currently ongoing checkins)
+ projectdate    | date                     | No      | Date of the recorded labor data (relative to the timezone of the project)
+ laborvalues    | jsonb                    | No      | JSON encoded object containing any defined labor attribute ID/value pairs for the worker during this labor period
+ closedts       | timestamp with time zone | No      | Time the record become closed - corresponds to time record was manually checked out (if manual) or last updated (if automated)
+ lasteditts     | timestamp with time zone | No      | Timestamp of last change to the record by a user (including check in or check out). If undefined, the record was created automatically, and may still be updated by automated processing. Timestamp is RFC3339 format.
+ lastedituserid | text                     | No      | UserID of the person who made the last manual change to this record.
+ lasteditnotes  | text                     | No      | Notes provided by last user who edited the records, if any
+ checkints      | timestamp with time zone | No      | Timestamp when a user created the record by checking in, in RFC3339 format. Only defined if manual check-in occurred.
+ checkinuserid  | text                     | No | UserID of the person who created the record by checking in, if this is how the record was created.
+ checkoutts     | timestamp with time zone | No | Timestamp when a user that completed the record by checking out, in RFC3339 format.
+Only defined if manual check-out occurred. If checkInTS is defined, but checkOutTS is not, the record is still checked in. 
+ checkoutuserid | text                     | No | UserID of the person who completed the record by checking out, if this is how the record was completed.
+ verifiedts     | timestamp with time zone | No | UserID of the person who completed the record by checking out, if this is how the record was completed.
+ verifieduserid | text                     | No | UserID of the person who last marked the record as verified.
+ checkinstatus  | text                     | No | Current status of the labor record (none, automated, checkedin, checkedout)
+
 ### triva_worker_detections
+
+Any tag detection data recorded for a worker while assigned to a project will be recorded here.  Any detection record will
+be particular to a given date on the project, and a worker can have zero or more records for a given date.
+
+   Column   | Type | Is Key? | Description |
+ --------------- | ------- | ------- | --------------------
+ clientid       | text                     | Yes     | Unique ID of the client
+ projectid      | text                     | Yes     | ID of the project
+ teamcompanyid  | text                     | Yes     | ID of the company of the assigned team (blank if no team)
+ userid         | text                     | Yes     | ID of the worker
+ startts        | timestamp with time zone | Yes     | Timestamp of the start of the record detection time
+ endts          | timestamp with time zone | No      | Current ending time for the worker detection (this can change for currently ongoing detections).
+ projectdate    | date                     | No      | Date of the recorded detection data (relative to the timezone of the project)
+ laborvalues    | jsonb                    | No      | JSON encoded object containing any defined labor attribute ID/value pairs for the worker during this detection period
+ lastlocationid | text                     | No      | Last location ID within the project where the tag was detected
+ lastlocationts | timestamp with time zone | No      | Timestamp of the last detection of the tag within the project during this detection period
+ locationranges | jsonb                    | No | JSON encoded object with a field for each location ID where the tag was detected during the period of the record, each with a value containing an array of time ranges (as RFC3339 timestamps) where the tag was detected at that corresponding location.
 
 ### triva_weather_alerts
 
+National Weather Service alerts reported for the location of the project.
+
+   Column   | Type | Is Key? | Description |
+ --------------- | ------- | ------- | --------------------
+ clientid       | text                     | Yes     | Unique ID of the client
+ projectid      | text                     | Yes     | ID of the project
+ id           | text                     | Yes | Unique NWS alert ID
+ areadesc     | text                     | No | Human friendly summary of area affected by alert
+ sentts       | timestamp with time zone | No | Timestamp when alert issued
+ effectivets  | timestamp with time zone | No | Timestamp when alert is effective
+ onsetts      | timestamp with time zone | No | Timestamp for the onset of conditions associated with alert
+ expirests    | timestamp with time zone | No | Timestamp for expiration of the alert (if not replaced).
+ endsts       | timestamp with time zone | No | Timestamp for the end of the conditions associated with the alerts
+ severity     | text                     | No | Severity of the alert.
+ certainty    | text                     | No | Certainty of the alert.
+ urgency      | text                     | No | Urgency of the alert.
+ event        | text                     | No | Type of alert - see https://api.weather.gov/alerts/types for list
+ sendername   | text                     | No | Office issuing the alert
+ headline     | text                     | No | Headline/summary of the alert
+ description  | text                     | No | Detailed text describing the alert
+ instruction  | text                     | No | Detailed text providing instruction on how to respond to the alert
+ response     | text                     | No | Summary of response suggested to the alert
+ polygon      | text[]                   | No | If provided, list of JSON latitude/longitide pairs for the area indicated by the alert
+ geocodelist  | text[]                   | No | List of affected areas, using UGS (US Geophysical Survey) codes. List can include counties (??C???) or forecast zones (??Z???).
+ replacedby   | text                     | No | If defined, alert has been superceded by a newer notice, with the given ID.
+ replacedts   | timestamp with time zone | No | If defined, alert has been superceded by a newer notice, as of the given timestamp
+ lastactivets | timestamp with time zone | No | Indicates the last time the alert was reported as active, when the weather service was last checked.
+ isactive     | boolean                  | No | Indicates whether the alert is currently active (true) versus having expired or been replaced by a newer alert.
+
 ### triva_weather_conditions
+
+History of hourly weather conditions associated with a given project.
+
+   Column   | Type | Is Key? | Description |
+ --------------- | ------- | ------- | --------------------
+ clientid       | text                     | Yes     | Unique ID of the client
+ projectid      | text                     | Yes     | ID of the project
+ conditiontime    | timestamp with time zone | Yes    | Timestamp associated with conditions (hourly)
+ actualtime       | timestamp with time zone | No | Time that the weather condition was collected by weather station 
+ temp             | double precision         | No | Temperature measured, in degrees F.
+ feelslike        | double precision         | No | 'Feels like' temperature measuted, in degrees F.
+ dewpoint         | double precision         | No | Dew point temperature measured, in degrees F.
+ humidity         | double precision         | No | Relative humidity measured, in percent RH.
+ precip           | double precision         | No | Accumulated preciptation quantity, in inches
+ snowdepth        | double precision         | No | Snow accumulation, in inches
+ pressure         | double precision         | No | Atmospheric pressure measured, in millibars
+ winddir          | double precision         | No | Measured wind direction, in degrees from North
+ wind             | text                     | No | Measured wind direction (16 point compass rose - N, NW, NNW)
+ windspeed        | double precision         | No | Measured wind speed, in miles per hour
+ windgust         | double precision         | No | Measured wind gust speed, in miles per hour
+ sky              | double precision         | No | Portion of the sky clear, in percent
+ clouds           | text                     | No | Code for cloud conditions. Defined values: CL - Clear, FW - Mostly Sunny, SC - Partly Cloudy, BK - Mostly Cloudy, OV - Cloudy/Overcast
+ weather          | text                     | No | Plain English summary of weather conditions
+ weatherprimary   | text                     | No | Coded description of primary weather event. See https://www.aerisweather.com/support/docs/api/reference/weather-codes/
+ icon             | text                     | No | Base name for icon summarizing primary weather.
+ iconurl          | text                     | No | URL for icon summarizing primary weather. Icon at given URL is indefinitely cacheable (new icons will have new URLs). This icon will be 55 x 55 pixels.
+ bigiconurl       | text                     | No | URL for icon summarizing primary weather. Icon at given URL is indefinitely cacheable (new icons will have new URLs). This icon will be 110 x 110 pixels.
+ visibility       | double precision         | No | Predicted visibility in miles
+ solarrad         | double precision         | No | Average solar radiation, in watts per square meter
+ ceiling          | double precision         | No | Estimated height of cloud ceiling, in feet
+ isday            | boolean                  | No | 
+Indicates whether predicted period is considered day (true) or night (false)
+ closeststationid | text                     | No | Indicates the unique ID of the closest weather station providing the given conditions deleted: type: boolean description: If true, the weather condition has been deleted version: type: integer format: int64 description: Version of the data set associated with the last update of this record
+ uvindex          | double precision         | No | Ultraviolet (UV) index - from 0 to 12
 
 ### triva_versionsync
 
