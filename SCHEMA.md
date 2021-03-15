@@ -303,4 +303,22 @@ Indicates whether predicted period is considered day (true) or night (false)
 
 ### triva_versionsync
 
+Internal table used for keeping track of what the latest version of each data set that has been synced into the database is.
+
+   Column   | Type | Is Key? | Description |
+ --------------- | ------- | ------- | --------------------
+ dataset   | text   | Yes | ID of the data set
+ clientid  | text   | Yee | Client ID of the scope of the data set
+ projectid | text   | Yes | Project ID of the scope of the data set (blank if not relevant to data set)
+ version   | bigint | No | Version of latest successfully completed synchronization into the database
+ 
 ### triva_db_version
+
+Internal table used to track schema version - DO NOT MODIFY VALUES.
+
+   Column   | Type | Is Key? | Description |
+ --------------- | ------- | ------- | --------------------
+ schema  | text    | Yes          | Schema domain
+ version | integer | No          | Schema version currently applied to database
+
+ 
