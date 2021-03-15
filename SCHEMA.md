@@ -208,8 +208,7 @@ be particular to a given date on the project, and a worker can have zero or more
  lasteditnotes  | text                     | No      | Notes provided by last user who edited the records, if any
  checkints      | timestamp with time zone | No      | Timestamp when a user created the record by checking in, in RFC3339 format. Only defined if manual check-in occurred.
  checkinuserid  | text                     | No | UserID of the person who created the record by checking in, if this is how the record was created.
- checkoutts     | timestamp with time zone | No | Timestamp when a user that completed the record by checking out, in RFC3339 format.
-Only defined if manual check-out occurred. If checkInTS is defined, but checkOutTS is not, the record is still checked in. 
+ checkoutts     | timestamp with time zone | No | Timestamp when a user that completed the record by checking out, in RFC3339 format.  Only defined if manual check-out occurred. If checkInTS is defined, but checkOutTS is not, the record is still checked in. 
  checkoutuserid | text                     | No | UserID of the person who completed the record by checking out, if this is how the record was completed.
  verifiedts     | timestamp with time zone | No | UserID of the person who completed the record by checking out, if this is how the record was completed.
  verifieduserid | text                     | No | UserID of the person who last marked the record as verified.
@@ -296,8 +295,7 @@ History of hourly weather conditions associated with a given project.
  visibility       | double precision         | No | Predicted visibility in miles
  solarrad         | double precision         | No | Average solar radiation, in watts per square meter
  ceiling          | double precision         | No | Estimated height of cloud ceiling, in feet
- isday            | boolean                  | No | 
-Indicates whether predicted period is considered day (true) or night (false)
+ isday            | boolean                  | No | Indicates whether predicted period is considered day (true) or night (false)
  closeststationid | text                     | No | Indicates the unique ID of the closest weather station providing the given conditions deleted: type: boolean description: If true, the weather condition has been deleted version: type: integer format: int64 description: Version of the data set associated with the last update of this record
  uvindex          | double precision         | No | Ultraviolet (UV) index - from 0 to 12
 
@@ -321,4 +319,3 @@ Internal table used to track schema version - DO NOT MODIFY VALUES.
  schema  | text    | Yes          | Schema domain
  version | integer | No          | Schema version currently applied to database
 
- 
