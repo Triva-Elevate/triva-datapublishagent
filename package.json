@@ -1,0 +1,35 @@
+{
+  "name": "triva-datapublishagent",
+  "version": "0.1.0",
+  "description": "Data publishing agent to create and maintain replicas of TRIVA application data",
+  "main": "dist/TrivaDataPublishAgent.js",
+  "scripts": {
+    "build": "./node_modules/typescript/bin/tsc",
+    "test": "echo No tests yet!"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Triva-Elevate/triva-datapublishagent.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Triva-Elevate/triva-datapublishagent/issues"
+  },
+  "homepage": "https://github.com/Triva-Elevate/triva-datapublishagent#readme",
+  "devDependencies": {
+    "@types/command-line-args": "^5.0.0",
+    "@types/node": "^14.14.34",
+    "@types/node-fetch": "^2.5.8",
+    "@types/pg": "^7.14.11",
+    "ts-node": "^9.1.1",
+    "typescript": "^4.2.3"
+  },
+  "dependencies": {
+    "command-line-args": "^5.1.1",
+    "moment-timezone": "^0.5.33",
+    "node-fetch": "^2.6.1",
+    "pg": "^8.5.1",
+    "source-map-support": "^0.5.19"
+  }
+}
