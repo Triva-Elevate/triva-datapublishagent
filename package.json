@@ -19,17 +19,17 @@
   "homepage": "https://github.com/Triva-Elevate/triva-datapublishagent#readme",
   "devDependencies": {
     "@types/command-line-args": "^5.0.0",
-    "@types/node": "^14.14.34",
-    "@types/node-fetch": "^2.5.8",
+    "@types/node": "^14.17.3",
+    "@types/node-fetch": "^2.5.10",
     "@types/pg": "^7.14.11",
     "ts-node": "^9.1.1",
-    "typescript": "^4.2.3"
+    "typescript": "^4.3.2"
   },
   "dependencies": {
     "command-line-args": "^5.1.1",
     "moment-timezone": "^0.5.33",
     "node-fetch": "^2.6.1",
-    "pg": "^8.5.1",
+    "pg": "^8.6.0",
     "source-map-support": "^0.5.19"
   }
 }

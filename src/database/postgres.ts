@@ -47,7 +47,7 @@ const DELETE_CLIENT_SQL = `DELETE FROM ${DBClientTable} WHERE clientid=$1`;
 const UPSERT_CLIENT_SQL = `INSERT INTO ${DBClientTable} (clientid, clientname, timezone) VALUES ($1, $2, $3) ON CONFLICT (clientid) DO UPDATE SET clientname=$2, timezone=$3`;
 const GET_ACTIVE_CLIENTIDS_SQL = `SELECT clientid from ${DBClientTable}`;
 const DELETE_PROJECT_SQL = `DELETE FROM ${DBProjectTable} WHERE clientid=$1 and projectid=$2`;
-const UPSERT_PROJECT_SQL = `INSERT INTO ${DBProjectTable} (clientid, projectid, projectname, timezone, address, roundtominutes, startofweek, overtimerules, currencyunit) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) ON CONFLICT (clientid, projectid) DO UPDATE SET projectname=$3, timezone=$4, address=$5, roundtominutes=$6, startofweek=$7, overtimerules=$8, currencyunit=$9`;
+const UPSERT_PROJECT_SQL = `INSERT INTO ${DBProjectTable} (clientid, projectid, projectname, timezone, address, roundtominutes, startofweek, overtimerules, currencyunit, state) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) ON CONFLICT (clientid, projectid) DO UPDATE SET projectname=$3, timezone=$4, address=$5, roundtominutes=$6, startofweek=$7, overtimerules=$8, currencyunit=$9, state=$10`;
 const GET_ACTIVE_PROJECTIDS_SQL = `SELECT projectid from ${DBProjectTable} where clientid=$1`;
 const DELETE_PROJECT_LABORATTRIB_SQL = `DELETE FROM ${DBProjectLaborAttribsTable} WHERE clientid=$1 and projectid=$2`;
 const UPSERT_PROJECT_LABORATTRIB_SQL = `INSERT INTO ${DBProjectLaborAttribsTable} (clientid, projectid, laborattribid, label, abbrev, type, subtype, isactive, parentattribid) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) ON CONFLICT (clientid, projectid, laborattribid) DO UPDATE SET label=$4, abbrev=$5, type=$6, subtype=$7, isactive=$8, parentattribid=$9`;
@@ -192,6 +192,14 @@ const dbVersions: DBSteps[] = [
             {
                 name: `Add locationranges from ${DBWorkerDetectionTable}`,
                 sql: `ALTER TABLE ${DBWorkerDetectionTable} ADD COLUMN locationranges JSONB`
+            },
+        ]
+    },
+    {
+        steps: [
+            {
+                name: `Add state to ${DBProjectTable}`,
+                sql: `ALTER TABLE ${DBProjectTable} ADD COLUMN state TEXT DEFAULT 'active'`
             },
         ]
     }
@@ -411,7 +419,8 @@ async function doUpdateProjects(sess: PGSessionInfo, clientID: string, updates: 
                     upd.roundToMinutes || 0,
                     upd.startOfWeek || null,
                     upd.overtimeRules || [],
-                    upd.currencyUnit || null
+                    upd.currencyUnit || null,
+                    upd.projectState || "active",
                 ];
                 await sess.pool.query(UPSERT_PROJECT_SQL, args);
                 // Replace labor attribs

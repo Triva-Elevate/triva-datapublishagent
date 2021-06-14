@@ -32,7 +32,8 @@ interface ProjectUpdate {
     breakRules?: BreakRuleRec[], // If defined, list of break rules (rules to reduce hours in day when above thresholds)
     currencyUnit?: string,   // If not defined, USD is assumed
     deleted?: boolean,
-    version: number
+    version: number,
+    projectState: string,
 };
 
 export interface ProjectUpdateList extends UpdateList {

@@ -46,7 +46,7 @@ Once the database and roles(s) are defined, run the DPA as follows:
 where options include:
 
 * --host <hostname> - hostname of the database server (also can be provided by the TRIVA_DPA_HOST environment variable)
-* --userud <userid> - userid of the role to be used to access the database server (also can be provided by the TRIVA_DPA_USERID environment variable) - use the role with access sufficient to create and alter tables and indexes.
+* --userid <userid> - userid of the role to be used to access the database server (also can be provided by the TRIVA_DPA_USERID environment variable) - use the role with access sufficient to create and alter tables and indexes.
 * --password <password> - password for the role to be used to access the server (also can be provided by the TRVIA_DPA_PASSWORD environment variable)
 * --dbtype postgres - selects the database type (default is 'postgres', so not needed here)
 * --port <portnum> - post number for the database server (default is 5432 for postgres) (also can be provided by the TRIVA_DPA_PORT environment variable)
