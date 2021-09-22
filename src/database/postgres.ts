@@ -9,6 +9,7 @@ import { WeatherAlertsUpdateList } from '../models/trivaWeatherAlerts';
 import { WeatherConditionsUpdateList } from '../models/trivaWeatherCondition';
 import { WorkerUpdateList } from '../models/trivaWorker';
 import { LocationDetectionRange, WorkerDetectionUpdateList } from '../models/trivaWorkerDetection';
+import { WorkerInviteUpdateList } from '../models/trivaWorkerInvite';
 import { WorkerLaborUpdateList } from '../models/trivaWorkerLabor';
 import { WorkerOnProjectUpdateList } from '../models/trivaWorkerOnProject';
 import { WorkerOnTeamUpdateList } from '../models/trivaWorkerOnTeam';
@@ -34,6 +35,7 @@ const DBWorkerLaborTable = "triva_worker_labor";
 const DBStationTable = "triva_stations";
 const DBWeatherConditionTable = "triva_weather_conditions";
 const DBWeatherAlertTable = "triva_weather_alerts";
+const DBWorkerInviteTable = "triva_worker_invites";
 
 const TABLE_EXISTS_SQL = "select exists(SELECT * FROM information_schema.tables WHERE table_schema = 'public' AND table_name = $1)";
 const GET_VERSION_SQL = `select version from ${DBVersionTable} where schema='base'`;
@@ -83,7 +85,31 @@ const UPSERT_WEATHERALERT_SQL = `INSERT INTO ${DBWeatherAlertTable} (clientid, p
         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24)
         ON CONFLICT (clientid, projectid, id) 
         DO UPDATE SET areadesc=$4, sentts=$5, effectivets=$6, onsetts=$7, expirests=$8, endsts=$9, severity=$10, certainty=$11, urgency=$12, event=$13, sendername=$14, headline=$15, description=$16, instruction=$17, response=$18, polygon=$19, geocodelist=$20, replacedby=$21, replacedts=$22, lastactivets=$23, isactive=$24`;
-    
+const DELETE_WORKER_INVITE_SQL = `DELETE FROM ${DBWorkerInviteTable} WHERE invitationid=$1`;
+const UPSERT_WORKER_INVITE_SQL = `INSERT INTO ${DBWorkerInviteTable} 
+        (invitationid, clientid, userid, invitinguserid, sentts, 
+        expirets, invitestate, invitecomments,
+        firstname, lastname, email, phonenumber,
+        acceptedts, acceptedaccountid,
+        rejectedts, rejectedrandom,
+        cancelledts, cancelleduserid, cancelledreason,
+        revokedts, revokeduserid, revokedreason)
+        VALUES ($1, $2, $3, $4, $5,
+            $6, $7, $8,
+            $9, $10, $11, $12,
+            $13, $14,
+            $15, $16,
+            $17, $18, $19,
+            $20, $21, $22)
+        ON CONFLICT(invitationid)
+        DO UPDATE SET clientid=$2, userid=$3, invitinguserid=$4, sentts=$5, 
+            expirets=$6, invitestate=$7, invitecomments=$8,
+            firstname=$9, lastname=$10, email=$11, phonenumber=$12,
+            acceptedts=$13, acceptedaccountid=$14,
+            rejectedts=$15, rejectedrandom=$16,
+            cancelledts=$17, cancelleduserid=$18, cancelledreason=$19,
+            revokedts=$20, revokeduserid=$21, revokedreason=$22`;
+            
 interface PGDBSession extends DBSession {
     session: PGSessionInfo
 }
@@ -202,6 +228,21 @@ const dbVersions: DBSteps[] = [
                 sql: `ALTER TABLE ${DBProjectTable} ADD COLUMN state TEXT DEFAULT 'active'`
             },
         ]
+    },
+    {
+        steps: [
+            {
+                name: `Create ${DBWorkerInviteTable} table`,
+                sql: `CREATE TABLE ${DBWorkerInviteTable} (invitationid TEXT PRIMARY KEY, 
+                    clientid TEXT, userid TEXT, invitinguserid TEXT, sentts timestamptz, 
+                    expirets timestamptz, invitestate TEXT, invitecomments TEXT,
+                    firstname TEXT, lastname TEXT, email TEXT, phonenumber TEXT,
+                    acceptedts timestamptz, acceptedaccountid TEXT,
+                    rejectedts timestamptz, rejectedrandom TEXT,
+                    cancelledts timestamptz, cancelleduserid TEXT, cancelledreason TEXT,
+                    revokedts timestamptz, revokeduserid TEXT, revokedreason TEXT)`
+            }
+        ]
     }
 ];
 
@@ -250,6 +291,7 @@ async function connectDB(host: string, port: number, dbName: string, userID: str
         dbUpdateStations: (clientID, projectID, updates): Promise<void> => { return doUpdateStations(session, clientID, projectID, updates); },
         dbUpdateWeatherConditions: (clientID, projectID, updates): Promise<void> => { return doUpdateWeatherConditions(session, clientID, projectID, updates); },
         dbUpdateWeatherAlerts: (clientID, projectID, updates): Promise<void> => { return doUpdateWeatherAlerts(session, clientID, projectID, updates); },
+        dbUpdateWorkerInvites: (clientID, updates): Promise<void> => { return doUpdateWorkerInvites(session, clientID, updates); },
     };
 }
 
@@ -893,6 +935,53 @@ async function doUpdateWeatherAlerts(sess: PGSessionInfo, clientID: string, proj
         await c.query("COMMIT")
     } catch (err) {
         TDPALog(`ERROR during SQL weather alerts update: ${err}`);
+        await c.query("ROLLBACK");
+        throw err;
+    } finally {
+        await c.release();
+    }
+}
+
+async function doUpdateWorkerInvites(sess: PGSessionInfo, clientID: string, updates: WorkerInviteUpdateList): Promise<void> {
+    let c = await sess.pool.connect(); // Get a connection, so we do this as transaction
+    try {
+        await c.query("BEGIN");         // Start transaction for update
+        // Apply updates in order
+        for (let upd of updates.workerInviteUpdates) {
+            if (upd.deleted) {  // Deleted record and subrecords
+                await sess.pool.query(DELETE_WORKER_INVITE_SQL, [ upd.invitationID ]);
+            }
+            else {
+                let args = [
+                    upd.invitationID,
+                    upd.clientID,
+                    upd.userID,
+                    upd.invitingUserID || null,
+                    toDate(upd.sentTS),
+                    toDate(upd.expireTS),
+                    upd.inviteState || null,
+                    upd.inviteComments || null,
+                    upd.firstName || "",
+                    upd.lastName || "",
+                    upd.email || null,
+                    upd.phoneNumber || null,
+                    toDate(upd.acceptedTS),
+                    upd.acceptedAccountID || null,
+                    toDate(upd.rejectedTS),
+                    upd.rejectedReason || null,
+                    toDate(upd.cancelledTS),
+                    upd.cancelledUserID || null,
+                    upd.cancelledReason || null,
+                    toDate(upd.revokedTS),
+                    upd.revokedUserID || null,
+                    upd.revokedReason || null
+                ];
+                await sess.pool.query(UPSERT_WORKER_INVITE_SQL, args);
+            }
+        }
+        await c.query("COMMIT")
+    } catch (err) {
+        TDPALog(`ERROR during SQL worker invite update: ${err}`);
         await c.query("ROLLBACK");
         throw err;
     } finally {

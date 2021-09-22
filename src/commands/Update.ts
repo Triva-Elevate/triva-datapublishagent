@@ -116,5 +116,5 @@ export function handleUpdateCommand(args: string[]) {
     const opts = applyUpdateDefaults(updateOpts);
     dpaUpdate(opts)
         .then(() => { TDPALog(`Update completed`); })
-        .catch(err => { TDPALog(`ERROR during update: ${err}`); process.exit(1); });
+        .catch(err => { TDPALog(`ERROR during update: ${err}`); TDPALog(err.stack); process.exit(1); });
 }

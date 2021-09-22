@@ -40,5 +40,5 @@ export async function doStationSync(sess: DBSession, clientID: string, projectID
     if (newVersion) {
         await sess.dbUpdateCurrentSyncVersion(StationDataSet, clientID, projectID, newVersion);
     }
-    if (cnt) { TDPALog(`Processed ${cnt} station updates for project=${clientID}:${projectID}`)};
+    if (cnt) { TDPALog(`Processed ${cnt} station updates for project=${clientID}:${projectID}`) };
 }
